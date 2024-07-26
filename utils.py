@@ -43,3 +43,10 @@ def evaluation(expected: Path, actual: Path):
     f1_score = (2 * precision * recall) / (precision + recall)
 
     return iou, precision, recall, f1_score
+
+
+if __name__ == "__main__":
+    expected = Path("mask.tif")
+    actual = Path("trees.tif")
+
+    print(evaluation(expected, actual))
