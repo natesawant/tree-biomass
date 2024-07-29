@@ -4,10 +4,12 @@ from fastapi.responses import FileResponse
 from fastapi import FastAPI, File, Form, HTTPException
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from dotenv import dotenv_values
 
 from processors.deepforest_processor import DeepForestProcessor
 from processors.detectree_processor import DetecTreeProcessor
 from processors.samgeo_processor import SamgeoProcessor
+from tiles import GoogleTiles
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,10 +17,14 @@ logging.basicConfig(
     handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
 )
 
+config = dotenv_values(".env")
+
 app = FastAPI()
 detectree = DetecTreeProcessor()
 deepforest = DeepForestProcessor()
 samgeo = SamgeoProcessor()
+
+tiles = GoogleTiles(config.get("TILES_API_KEY"))
 
 
 @app.get("/health")

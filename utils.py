@@ -5,7 +5,7 @@ from pathlib import Path
 
 def evaluation(expected: Path, actual: Path):
     """
-    Return the Intersection over Union (IoU), Precision, Recall, and F1 Scores
+    Return the Accuracy, Precision, Recall, and F1 Scores
     Expected and actual bit masks should be the same dimensions
     """
     expected_im = Image.open(expected)
@@ -15,14 +15,13 @@ def evaluation(expected: Path, actual: Path):
     expected_im = expected_im.convert("L")
     actual_im = actual_im.convert("L")
 
-    e_array = numpy.array(expected_im)
-    a_array = numpy.array(actual_im)
+    expected = numpy.array(expected_im)
+    actual = numpy.array(actual_im)
 
     assert expected_im.size == actual_im.size
 
-    width, height = e_array.shape
+    width, height = expected.shape
 
-    union_count = 0
     true_positive = 0
     true_negative = 0
     false_positive = 0
@@ -30,23 +29,14 @@ def evaluation(expected: Path, actual: Path):
 
     for w in range(width):
         for h in range(height):
-            union_count += 1 if e_array[w][h] or a_array[w][h] else 0
+            true_positive += expected[w][h] & actual[w][h]
+            true_negative += ~expected[w][h] & ~actual[w][h]
+            false_positive += ~expected[w][h] & actual[w][h]
+            false_negative += expected[w][h] & ~actual[w][h]
 
-            true_positive += 1 if e_array[w][h] and a_array[w][h] else 0
-            true_negative += 1 if not e_array[w][h] and not a_array[w][h] else 0
-            false_positive += 1 if not e_array[w][h] and a_array[w][h] else 0
-            false_negative += 1 if e_array[w][h] and not a_array[w][h] else 0
-
-    iou = 0 if union_count == 0 else true_positive / union_count
+    accuracy = (true_positive + true_negative) / (width * height)
     precision = true_positive / (true_positive + false_positive)
     recall = true_positive / (true_positive + false_negative)
     f1_score = (2 * precision * recall) / (precision + recall)
 
-    return iou, precision, recall, f1_score
-
-
-if __name__ == "__main__":
-    expected = Path("mask.tif")
-    actual = Path("trees.tif")
-
-    print(evaluation(expected, actual))
+    return accuracy, precision, recall, f1_score
