@@ -90,7 +90,8 @@ async def evaluate(
         logging.info("Writing image data to temporary file")
         input_filepath.write_bytes(base_mask)
         model_filepath.write_bytes(model_mask)
-        csv_boxes.write_bytes(csv_file)
+        if csv_file is not None:
+            csv_boxes.write_bytes(csv_file)
 
         logging.info("Computing metrics")
         if csv_file is not None:
