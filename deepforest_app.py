@@ -35,4 +35,4 @@ interface = gr.Interface(fn=deepforest_process,
                          outputs=gr.Image(label="Predicted Image"),
                          )
 
-interface.launch()
+interface.launch(share=True)
