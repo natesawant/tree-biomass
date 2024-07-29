@@ -11,13 +11,27 @@ class GoogleTiles:
         if session_token:
             self.session_token = session_token
         else:
-            self.session_token = self.generate_session()
+            self.session_token = GoogleTiles.generate_session(api_key)
 
-    def generate_session(self):
-        raise NotImplementedError()
+    def generate_session(api_key):
+        res = requests.get(
+            url=f"https://tile.googleapis.com/v1/createSession?key={api_key}",
+            json={
+                "mapType": "satellite",
+                "language": "en-US",
+                "region": "US",
+                "scale": "scaleFactor4x",
+                "highDpi": "true",
+                "imageFormat": "jpeg",
+            },
+        )
 
-    def request_tile_coords(self, zoom, lat, lng):
-        return self.request_tile_coords(zoom, fromLatLngToPoint(lat, lng))
+        res.raise_for_status()
+
+        return res.json().get("session")
+
+    def request_tile_coords(self, lat, lng, zoom=15):
+        return self.request_tile_coords(zoom, GoogleTiles.fromLatLngToPoint(lat, lng))
 
     def request_tile_point(self, zoom, x, y, output_filename):
         assert zoom >= 0 and zoom <= 22
@@ -38,10 +52,9 @@ class GoogleTiles:
                 f.write(chunk)
         print(f"Tile downloaded successfully and saved to {output_filename}")
 
-
-def fromLatLngToPoint(lat, lng):
-    mercator = -math.log(math.tan((0.25 + lat / 360) * math.pi))
-    return (
-        TILE_SIZE * (lng / 360 + 0.5),
-        TILE_SIZE / 2 * (1 + mercator / math.pi),
-    )
+    def fromLatLngToPoint(lat, lng):
+        mercator = -math.log(math.tan((0.25 + lat / 360) * math.pi))
+        return (
+            TILE_SIZE * (lng / 360 + 0.5),
+            TILE_SIZE / 2 * (1 + mercator / math.pi),
+        )
