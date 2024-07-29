@@ -28,10 +28,16 @@ def evaluation(expected: Path, actual: Path):
 
     for w in range(width):
         for h in range(height):
-            true_positive += expected[w][h] & actual[w][h]
-            true_negative += ~expected[w][h] & ~actual[w][h]
-            false_positive += ~expected[w][h] & actual[w][h]
-            false_negative += expected[w][h] & ~actual[w][h]
+            true_positive += 1 if expected[w][h] and actual[w][h] else 0
+            true_negative += 1 if not expected[w][h] and not actual[w][h] else 0
+            false_positive += 1 if not expected[w][h] and actual[w][h] else 0
+            false_negative += 1 if expected[w][h] and not actual[w][h] else 0
+
+    print(true_positive)
+    print(true_negative)
+    print(false_positive)
+    print(false_negative)
+    print(width * height)
 
     accuracy = (true_positive + true_negative) / (width * height)
     precision = true_positive / (true_positive + false_positive)
@@ -39,3 +45,6 @@ def evaluation(expected: Path, actual: Path):
     f1_score = (2 * precision * recall) / (precision + recall)
 
     return accuracy, precision, recall, f1_score
+
+if __name__ == "__main__":
+    print(evaluation("boxmask1a.png","predictionboxmask1a.png"))
