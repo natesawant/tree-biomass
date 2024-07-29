@@ -42,17 +42,3 @@ def get_image_dimensions(image_path):
         # Get image dimensions
         width, height = img.size
         return width, height
-
-# Specify the path to your image
-image_path = 'sampleQLDimageXX.png'
-csv_path = 'sampleQLDcsvXX.csv'
-
-# Get and print the image dimensions
-width, height = get_image_dimensions(image_path)
-
-# Hardcoded image width and height
-# Define the image dimensions
-# width, height = 458, 196
-
-# Call the function with your CSV file and desired output image file name
-create_image_from_csv(csv_path, 'boxmaskXX.png', width, height)
