@@ -13,3 +13,4 @@ dependencies:
   - segment-anything-fast
   - pip:
       - albumentations
+      - python-dotenv
