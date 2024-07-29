@@ -68,3 +68,4 @@ async def process(
 async def eval(
     image_data: Annotated[bytes, File()], processor_type: Annotated[str, Form()]
 ):
+    raise NotImplementedError()
