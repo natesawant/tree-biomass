@@ -63,3 +63,8 @@ async def process(
             )
 
         return FileResponse(output_file.name)
+
+@app.post("/eval")
+async def eval(
+    image_data: Annotated[bytes, File()], processor_type: Annotated[str, Form()]
+):
