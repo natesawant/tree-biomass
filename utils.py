@@ -2,7 +2,6 @@ import numpy
 from PIL import Image
 from pathlib import Path
 
-
 def evaluation(expected: Path, actual: Path):
     """
     Return the Accuracy, Precision, Recall, and F1 Scores
