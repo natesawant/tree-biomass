@@ -32,7 +32,7 @@ class GoogleTiles:
 
         res.raise_for_status()
 
-        print(res.json())
+        logging.debug(res.json())
 
         return res.json().get("session")
 
@@ -49,7 +49,7 @@ class GoogleTiles:
         # Send an HTTP GET request to download the tile
         response = requests.get(url, stream=True)
 
-        print(response)
+        logging.debug(response)
 
         # Check for successful response status code
         response.raise_for_status()
@@ -57,7 +57,7 @@ class GoogleTiles:
         with open(output_filename, "wb") as file:
             for chunk in response.iter_content(1024):
                 file.write(chunk)
-        print(f"Tile downloaded successfully and saved to {output_filename}")
+        logging.info(f"Tile downloaded successfully and saved to {output_filename}")
 
     def fromLatLngToPoint(lat, lng):
         mercator = -math.log(math.tan((0.25 + lat / 360) * math.pi))

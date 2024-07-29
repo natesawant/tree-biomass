@@ -2,6 +2,7 @@ import numpy
 from PIL import Image
 from pathlib import Path
 
+
 def evaluation(expected: Path, actual: Path):
     """
     Return the Accuracy, Precision, Recall, and F1 Scores
@@ -28,10 +29,10 @@ def evaluation(expected: Path, actual: Path):
 
     for w in range(width):
         for h in range(height):
-            true_positive += expected[w][h] & actual[w][h]
-            true_negative += ~expected[w][h] & ~actual[w][h]
-            false_positive += ~expected[w][h] & actual[w][h]
-            false_negative += expected[w][h] & ~actual[w][h]
+            true_positive += 1 if expected[w][h] and actual[w][h] else 0
+            true_negative += 1 if not expected[w][h] and not actual[w][h] else 0
+            false_positive += 1 if not expected[w][h] and actual[w][h] else 0
+            false_negative += 1 if expected[w][h] and not actual[w][h] else 0
 
     accuracy = (true_positive + true_negative) / (width * height)
     precision = true_positive / (true_positive + false_positive)
