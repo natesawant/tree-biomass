@@ -5,7 +5,6 @@ from fastapi import FastAPI, File, Form, HTTPException
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from dotenv import dotenv_values
-from PIL import Image
 
 import bounding_box_mask
 import utils
@@ -37,11 +36,12 @@ async def root():
 
 @app.post("/process")
 async def process(
-        image_data: Annotated[bytes, File()], processor_type: Annotated[str, Form()]
+    image_data: Annotated[bytes, File()], processor_type: Annotated[str, Form()]
 ):
-    with NamedTemporaryFile(
-            suffix=".jpg", delete=False
-    ) as input_file, NamedTemporaryFile(suffix=".tif", delete=False) as output_file:
+    with (
+        NamedTemporaryFile(suffix=".jpg", delete=False) as input_file,
+        NamedTemporaryFile(suffix=".tif", delete=False) as output_file,
+    ):
         input_filepath = Path(input_file.name)
         output_filepath = Path(output_file.name)
 
@@ -68,16 +68,50 @@ async def process(
         return FileResponse(output_file.name)
 
 
+@app.get("/satellite/{lat}/{lng}")
+async def satellite(lat: float, lng: float, processor_type="detectree"):
+    with (
+        NamedTemporaryFile(suffix=".jpeg", mode="wb", delete=False) as input_file,
+        NamedTemporaryFile(suffix=".tif", delete=False) as output_file,
+    ):
+        input_filepath = Path(input_file.name)
+        output_filepath = Path(output_file.name)
+
+        logging.debug(f"input: {input_filepath}")
+        logging.debug(f"output: {output_filepath}")
+
+        logging.info("Writing image data to temporary file")
+        tiles.request_tile_coords(lat, lng, input_filepath)
+
+        logging.info("Starting to process image using processor")
+        if processor_type == "detectree":
+            detectree.process(input_filepath, output_filepath)
+        elif processor_type == "deepforest":
+            deepforest.process(input_filepath, output_filepath)
+        elif processor_type == "samgeo":
+            samgeo.process(input_filepath, output_filepath)
+        else:
+            logging.warning("processor_type not allowed")
+            raise HTTPException(
+                status_code=400,
+                detail="processor_type must be one of 'samgeo', 'detectree', or 'deepforest'",
+            )
+
+        return FileResponse(output_file.name)
+
+
 @app.post("/evaluate")
 async def evaluate(
-        base_mask: Annotated[bytes, File()],
-        model_mask: Annotated[bytes | None, File()] = None,
-        csv_file: Annotated[bytes | None, File()] = None
+    base_mask: Annotated[bytes, File()],
+    model_mask: Annotated[bytes | None, File()] = None,
+    csv_file: Annotated[bytes | None, File()] = None,
 ):
-    with (NamedTemporaryFile(suffix=".png", delete=False) as input_mask,
-          NamedTemporaryFile(suffix=".png", delete=False) as model,
-          NamedTemporaryFile(suffix=".csv", delete=False) as boxes,
-          NamedTemporaryFile(suffix=".png", delete=False) as output_csv):
+    with (
+        NamedTemporaryFile(suffix=".png", delete=False) as input_mask,
+        NamedTemporaryFile(suffix=".png", delete=False) as model,
+        NamedTemporaryFile(suffix=".csv", delete=False) as boxes,
+        NamedTemporaryFile(suffix=".png", delete=False) as output_csv,
+    ):
         input_filepath = Path(input_mask.name)
         model_filepath = Path(model.name)
         csv_boxes = Path(boxes.name)
@@ -96,11 +130,18 @@ async def evaluate(
         logging.info("Computing metrics")
         if csv_file is not None:
             width, height = bounding_box_mask.get_image_dimensions(input_filepath)
-            bounding_box_mask.create_image_from_csv(csv_boxes, output_csv_filepath, width, height)
+            bounding_box_mask.create_image_from_csv(
+                csv_boxes, output_csv_filepath, width, height
+            )
             metrics = utils.evaluation(input_filepath, output_csv_filepath)
         else:
             metrics = utils.evaluation(input_filepath, model_filepath)
 
         accuracy, precision, recall, f1_score = metrics
 
-        return {"accuracy": accuracy, "precision": precision, "recall": recall, "f1_score": f1_score}
+        return {
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1_score,
+        }

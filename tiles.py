@@ -1,5 +1,9 @@
 import math
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 import requests
+from dotenv import dotenv_values
+import logging
 
 TILE_SIZE = 256
 
@@ -28,12 +32,15 @@ class GoogleTiles:
 
         res.raise_for_status()
 
+        print(res.json())
+
         return res.json().get("session")
 
-    def request_tile_coords(self, lat, lng, zoom=15):
-        return self.request_tile_coords(zoom, GoogleTiles.fromLatLngToPoint(lat, lng))
+    def request_tile_coords(self, lat, lng, output_filename, zoom=15):
+        x, y, zoom = GoogleTiles.fromLatLngToTileCoord(lat, lng, zoom)
+        return self.request_tile_point(zoom, x, y, output_filename)
 
-    def request_tile_point(self, zoom, x, y, output_filename):
+    def request_tile_point(self, zoom, x, y, output_filename: Path):
         assert zoom >= 0 and zoom <= 22
 
         # Construct the URL with session token and API key
@@ -42,14 +49,14 @@ class GoogleTiles:
         # Send an HTTP GET request to download the tile
         response = requests.get(url, stream=True)
 
+        print(response)
+
         # Check for successful response status code
         response.raise_for_status()
 
-        # Open the output file in write-binary mode
-        with open(output_filename, "bx") as f:
-            # Write the downloaded data to the file chunk by chunk
+        with open(output_filename, "wb") as file:
             for chunk in response.iter_content(1024):
-                f.write(chunk)
+                file.write(chunk)
         print(f"Tile downloaded successfully and saved to {output_filename}")
 
     def fromLatLngToPoint(lat, lng):
@@ -58,3 +65,27 @@ class GoogleTiles:
             TILE_SIZE * (lng / 360 + 0.5),
             TILE_SIZE / 2 * (1 + mercator / math.pi),
         )
+
+    def fromLatLngToTileCoord(lat, lng, zoom=15):
+        x, y = GoogleTiles.fromLatLngToPoint(lat, lng)
+        scale = pow(2, zoom)
+
+        return (
+            math.floor(x * scale / TILE_SIZE),
+            math.floor(y * scale / TILE_SIZE),
+            zoom,
+        )
+
+
+if __name__ == "__main__":
+    config = dotenv_values(".env")
+
+    tiles = GoogleTiles(config.get("TILES_API_KEY"))
+    with NamedTemporaryFile(
+        suffix=".png", mode="wb", dir="tmp", delete=False
+    ) as input_file:
+        # with open("tmp/test.png", mode="wb") as input_file:
+        # input_filepath = Path("tmp") / "test.png"
+        input_filepath = Path(input_file.name)
+        # tiles.request_tile_point(15, 6294, 13288, input_filepath)
+        tiles.request_tile_coords(-33.8688, 151.2093, input_filepath)
