@@ -14,7 +14,7 @@ class GoogleTiles:
             self.session_token = GoogleTiles.generate_session(api_key)
 
     def generate_session(api_key):
-        res = requests.get(
+        res = requests.post(
             url=f"https://tile.googleapis.com/v1/createSession?key={api_key}",
             json={
                 "mapType": "satellite",
