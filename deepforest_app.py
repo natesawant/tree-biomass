@@ -24,7 +24,7 @@ def deepforest_process(px):
 
     temp_path = convert_rgba_to_rgb_and_save(img)
 
-    processed_img = model.predict_tile(temp_path, return_plot=True, patch_size=300, patch_overlap=0.25)
+    processed_img = model.predict_tile(temp_path, return_plot=True, patch_size=500, patch_overlap=0.25)
 
     os.remove(temp_path)
     return processed_img
